@@ -4,6 +4,7 @@ mod services;
 mod traits;
 mod browsing_history;
 use std::env;
+use self::browsing_history::BrowsingHistory;
 use self::{ dns_cache::DnsCache};
 use self::{ arp_cache::ArpCache};
 use self::{ services::Services};
@@ -19,14 +20,18 @@ impl Controller {
         let dns_cache = DnsCache{};
         let arp_cache = ArpCache{};
         let services = Services{};
+        let browsing_history = BrowsingHistory{};
         artifacts.push(Box::new(dns_cache));
         artifacts.push(Box::new(arp_cache));
         artifacts.push(Box::new(services));
+        artifacts.push(Box::new(browsing_history));
         Self {
             available_artifacts: artifacts
         }
     }
 
+
+    ///If we are in a windows system, get forensic artifacts
     pub fn acquire(&mut self) -> Result<(), String> {
         match self.get_win_version() {
             Ok(v) => {
@@ -39,6 +44,16 @@ impl Controller {
         }
     }
 
+    ///This function checks if it is running in a Windows System and returns the version
+    fn get_win_version(&mut self) -> Result<String, String> {
+        if env::consts::OS != "windows" {
+            return Err("This tool just works for Windows devices".to_string());
+        }
+        let info = os_info::get().to_string();
+        Ok(info)
+    }
+
+    ///Iterate the implemented artifacts and acquire 
     fn get_artifacts(&self, version: &str) -> Result<(), String> {
         println!("{}", version);
         for artifact in &self.available_artifacts {
@@ -50,12 +65,6 @@ impl Controller {
         Ok(())
     }
     
-    fn get_win_version(&mut self) -> Result<String, String> {
-        if env::consts::OS != "windows" {
-            return Err("This tool just works for Windows devices".to_string());
-        }
-        let info = os_info::get().to_string();
-        Ok(info)
-    }
+
 
 }

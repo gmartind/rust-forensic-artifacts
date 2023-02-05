@@ -8,6 +8,8 @@ pub struct DnsCache{
 }
 
 impl Artifact for DnsCache{
+    
+    ///Execute powershell command and save
     fn get_artifact(&self) -> Result<String, String> {
         let output = match Command::new("powershell").current_dir("/").args(["Get-DnsClientCache"]).output(){
             Ok(output) => output,
@@ -15,4 +17,4 @@ impl Artifact for DnsCache{
         };
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
-}
+} 
