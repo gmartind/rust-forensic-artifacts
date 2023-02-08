@@ -1,12 +1,71 @@
 use forensic_rs::prelude::{RegistryReader, RegValue};
-use crate::controller::traits::Artifact;
 
 const KEY_ROUTE: &str = "SYSTEM\\CurrentControlSet\\Services";
 
-pub struct Services {
 
+
+
+pub struct ServiceReturn{
+    services: Vec<Service>
 }
 
+impl ServiceReturn{
+    pub fn new() -> Self{
+        Self { services: Vec::new() }
+    }
+    pub fn insert(&mut self, service : Service) {
+        self.services.push(service);
+    }
+
+    pub fn get_services(&self) -> &Vec<Service> {
+        &self.services
+    }
+}
+
+pub struct Service{
+    pub name: String,
+    pub image_path: String
+}
+
+impl Service{
+    pub fn get_name(&self) -> &String{
+        &self.name
+    }
+
+    pub fn get_path(&self) -> &String{
+        &self.image_path
+    }
+}
+
+
+pub struct ServicesArtifact {
+    
+}
+
+impl ServicesArtifact{
+
+    pub fn acquire() -> Result<ServiceReturn, String> {
+        let mut ret = ServiceReturn::new();
+        let mut registry = frnsc_liveregistry_rs::LiveRegistryReader{};
+        let registry_key = match registry.open_key(forensic_rs::prelude::RegHiveKey::HkeyLocalMachine, 
+            KEY_ROUTE){
+                Ok(key) => key,
+                Err(_) => return Err("Unable to open registry.".to_string())
+        };
+
+        let keys = match registry.enumerate_keys(registry_key){
+            Ok(keys) => keys,
+            Err(_) => Vec::new()
+        };
+
+
+        for key in keys{
+            let image_path = get_image_path(&mut registry, &key);
+            ret.services.push(Service { name: key, image_path: image_path });
+        }
+        Ok(ret)
+    }
+}
 
 fn get_image_path(registry: &mut frnsc_liveregistry_rs::LiveRegistryReader, key: &str) -> String{
     let mut registry_key_route = String::from(KEY_ROUTE);
@@ -29,29 +88,4 @@ fn get_image_path(registry: &mut frnsc_liveregistry_rs::LiveRegistryReader, key:
 }
 
 
-impl Artifact for Services {
-    fn get_artifact(&self) -> Result<String, String>{
-        let mut registry = frnsc_liveregistry_rs::LiveRegistryReader{};
-        let registry_key = match registry.open_key(forensic_rs::prelude::RegHiveKey::HkeyLocalMachine, 
-            KEY_ROUTE){
-                Ok(key) => key,
-                Err(_) => return Err("Unable to open registry.".to_string())
-            };
-
-        let keys = match registry.enumerate_keys(registry_key){
-            Ok(keys) => keys,
-            Err(_) => return Err("No keys found".to_string())
-        };
-
-        let mut ret: String = String::new();
-        for key in keys{
-            ret.push_str(&key[..]);
-            ret.push_str("          ");
-            let image_path = get_image_path(&mut registry, &key);
-            ret.push_str(&format!("  {}", image_path));
-            ret.push('\n');
-        }
-        Ok(ret)
-    }
-}
 

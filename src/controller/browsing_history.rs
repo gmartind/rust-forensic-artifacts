@@ -1,19 +1,12 @@
-use std::fs::{self, File};
+use std::fs::{self};
 use sqlite::State;
-use std::io::Write;
 use forensic_rs::prelude::RegistryReader;
 
-use crate::controller::traits::Artifact;
+use super::services::ServiceReturn;
 
 const PROFILE_LIST_ROUTE: &str = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
 const CHROME_HISTORY: &str = r"AppData\Local\Google\Chrome\User Data\Default\History";
-
-
-struct UserInfo{
-    sid: String,
-    image_path: String
-}
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 enum BrowsersBrands {
     Chrome,
     MSEdge,
@@ -22,54 +15,123 @@ enum BrowsersBrands {
     Opera
 }
 
-pub struct BrowsingHistory {
+#[derive(Debug, Clone, Default)]
+pub struct UserInfo{
+    pub sid: String,
+    pub image_path: String
+}
+
+
+#[derive(Debug, Clone, Default)]
+pub struct HistoryEntry{
+    pub time: String,
+    pub path: String
+}
+
+impl HistoryEntry{
+    pub fn new(time: String, path: String) -> Self{
+        Self { time: time, path: path }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct History{
+    pub chrome: Vec<HistoryEntry>,
+    pub firefox: Vec<HistoryEntry>,
+    pub iexplorer: Vec<HistoryEntry>,
+    pub msedge: Vec<HistoryEntry>,
+    pub opera: Vec<HistoryEntry>
+}
+
+impl History{
+    pub fn new() -> Self{
+        Self::default()
+    }
+}
+
+pub struct BrowsingHistoryReturn{
+    users_history: Vec<(UserInfo, History)>
+}
+
+impl BrowsingHistoryReturn{
+    pub fn new() -> Self{
+        Self { users_history: Vec::new() }
+    }
+
+    pub fn get_user_history(&self) -> &Vec<(UserInfo, History)>{
+        &self.users_history
+    }
+}
+
+pub struct BrowsingHistoryArtifact {
 
 }
 
-impl Artifact for BrowsingHistory{
-    fn get_artifact(&self) -> Result<String, String>{
-        let browsers = match get_browsers(){
-            Some(b) => b,
-            None => return Ok(String::from("No browsers"))
-        };
+impl BrowsingHistoryArtifact{
 
-        let mut ret = String::new();
-        let mut users = get_users_sids();
-        while let Some(top) = users.pop(){
-            ret.push_str(&browsing_history_for_user(top, &browsers));
+    pub fn new() -> Self{
+        Self { }
+    }
+
+
+
+    pub fn acquire() -> Result<BrowsingHistoryReturn, String>{
+        let mut ret = BrowsingHistoryReturn::new();
+        let users: Vec<UserInfo> = get_users_sids();
+        for user in users{
+            let mut history = History::new();
+            history.chrome = chrome_history(&user.image_path).unwrap();
+            ret.users_history.push((user,history));
         }
         Ok(ret)
     }
-}
+//    pub fn get_artifact(&self) -> Result<String, String>{
+//        let browsers = match get_browsers(){
+//            Some(b) => b,
+//            None => return Ok(String::from("No browsers"))
+//        };
 
-fn browsing_history_for_user(user: UserInfo, browsers: &Vec<BrowsersBrands>) -> String{
-    let mut ret = String::new();
-    for browser in browsers {
-        if browser == &BrowsersBrands::Firefox{
-        }
-        else if browser == &BrowsersBrands::Chrome{
-            match chrome_history(&user.image_path){
-                Ok(r) => ret.push_str(&r),
-                Err(_) => panic!()
-            };
-        }
-    }
-    ret
-}
+//        let mut ret = String::new();
+//        let mut users = get_users_sids();
+//        while let Some(top) = users.pop(){
+//            ret.push_str(&browsing_history_for_user(top, &browsers));
+//        }
+//        Ok(ret)
+//    }
+//}
 
-fn chrome_history(image_path: &str) -> Result<String, String>{
+//fn browsing_history_for_user(user: UserInfo, browsers: &Vec<BrowsersBrands>) -> String{
+//    let mut ret = String::new();
+//    for browser in browsers {
+//        if browser == &BrowsersBrands::Firefox{
+//        }
+//        else if browser == &BrowsersBrands::Chrome{
+//            match chrome_history(&user.image_path){
+//                Ok(r) => ret.push_str(&r),
+//                Err(e) => ret.push_str(&e)
+//            };
+//        }
+//    }
+//    ret
+//}
+}
+fn chrome_history(image_path: &str) -> Result<Vec<HistoryEntry>, String>{
     let mut history_path = String::from(image_path);
     history_path.push_str(r"\");
     history_path.push_str(CHROME_HISTORY);
     println!("{}",history_path);
-    fs::copy(history_path, "chrome_history.sqlite").unwrap();
+    match fs::copy(history_path, "chrome_history.sqlite"){
+        Ok(_) => (),
+        Err(_) => return Ok(Vec::new())
+    }
     let connection = sqlite::open("chrome_history.sqlite").unwrap();
     let query = "SELECT urls.url AS url, datetime(visits.visit_time / 1000000 + (strftime('%s', '1601-01-01')), 'unixepoch', 'localtime') AS date FROM urls JOIN visits ON visits.url   = urls.id ORDER BY visits.visit_time ASC";
     let mut statement = connection.prepare(query).unwrap();
-    let mut ret = String::new();
+    let mut ret = Vec::new();
     while let Ok(State::Row) = statement.next(){
-        ret.push_str(&format!("{} : {}", statement.read::<String, _>("date").unwrap(), statement.read::<String, _>("url").unwrap()));
-        ret.push('\n');
+        ret.push(HistoryEntry::new(statement.read::<String, _>("date").unwrap(), statement.read::<String, _>("url").unwrap()));
+        //ret.push_str(&format!("{} : {}", statement.read::<String, _>("date").unwrap(), statement.read::<String, _>("url").unwrap()));
+        //ret.push('\n');
     }
     Ok(ret)
 }
@@ -79,7 +141,10 @@ fn get_browsers() -> Option<Vec<BrowsersBrands>>{
     let mut registry = frnsc_liveregistry_rs::LiveRegistryReader{};
     let registry_key = registry.open_key(forensic_rs::prelude::RegHiveKey::
         HkeyLocalMachine, "Software\\Clients\\StartMenuInternet");
-    let mut values = registry.enumerate_keys(registry_key.unwrap()).unwrap();
+    let mut values = match registry.enumerate_keys(registry_key.unwrap()){
+        Ok(v) => v,
+        Err(_) => return None
+    };
     let mut normalized_values: Vec<BrowsersBrands> = Vec::new();
     while let Some(top) = values.pop() {
         if top.to_lowercase().contains("chrome"){

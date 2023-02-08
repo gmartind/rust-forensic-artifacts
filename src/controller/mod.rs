@@ -4,44 +4,37 @@ mod services;
 mod traits;
 mod browsing_history;
 use std::env;
-use self::browsing_history::BrowsingHistory;
+use self::browsing_history::BrowsingHistoryArtifact;
 use self::{ dns_cache::DnsCache};
 use self::{ arp_cache::ArpCache};
-use self::{ services::Services};
-use crate::controller::traits::Artifact;
+use self::{ services::ServicesArtifact, services::ServiceReturn};
+use crate::controller::services::Service;
 
 pub struct Controller {
-    available_artifacts: Vec<Box<dyn Artifact>>
+    //available_artifacts: Vec<Box<dyn Artifact>>
 }
 
 impl Controller {
     pub fn new() -> Self {
-        let mut artifacts: Vec<Box<dyn Artifact>> = Vec::new();
-        let dns_cache = DnsCache{};
-        let arp_cache = ArpCache{};
-        let services = Services{};
-        let browsing_history = BrowsingHistory{};
-        artifacts.push(Box::new(dns_cache));
-        artifacts.push(Box::new(arp_cache));
-        artifacts.push(Box::new(services));
-        artifacts.push(Box::new(browsing_history));
+        //let artifacts: Vec<Box<dyn Artifact>> = Vec::new();
+        //let dns_cache = DnsCache::new();
+        //let arp_cache = ArpCache::new();
+        //let services = ServicesArtifact::new();
+        //let browsing_history = BrowsingHistory::new();
+        //artifacts.push(Box::new(dns_cache));
+        //artifacts.push(Box::new(arp_cache));
+        //artifacts.push(Box::new(services));
+        //artifacts.push(Box::new(browsing_history));
         Self {
-            available_artifacts: artifacts
+            //available_artifacts: artifacts
         }
     }
 
 
     ///If we are in a windows system, get forensic artifacts
     pub fn acquire(&mut self) -> Result<(), String> {
-        match self.get_win_version() {
-            Ok(v) => {
-                match self.get_artifacts(&v) {
-                    Ok(_) => return Ok(()),
-                    Err(e) => return Err(e)
-                }
-            }
-            Err(e) => return Err(e),
-        }
+        let version= self.get_win_version()?;
+        self.get_artifacts(&version)
     }
 
     ///This function checks if it is running in a Windows System and returns the version
@@ -56,15 +49,32 @@ impl Controller {
     ///Iterate the implemented artifacts and acquire 
     fn get_artifacts(&self, version: &str) -> Result<(), String> {
         println!("{}", version);
-        for artifact in &self.available_artifacts {
-            match artifact.get_artifact(){
-                Ok(output) => println!("{}", output),
-                Err(e) => return Err(e)
-            }
+        let service_ret: ServiceReturn = match ServicesArtifact::acquire(){
+            Ok(r) => r,
+            Err(_) => return Err(String::from("No se pudieron extraer los servicios"))
+        };
+        for s in service_ret.get_services() {
+            println!("{}    {}", s.get_name(), s.get_path());
         }
+        let browsing_history_ret = match BrowsingHistoryArtifact::acquire(){
+            Ok(r) => r,
+            Err(_) => return Err(String::from("No se pudieron extraer los historiales de navegación"))
+        };
+
+        for (user, history) in browsing_history_ret.get_user_history(){
+            println!("Historial de navegación para usuario {:?}:{:?}", user.sid, user.image_path);
+            println!("  Historial de Google Chrome:");
+            for entry in &history.chrome{
+                println!("  {}: {}", entry.time, entry.path);
+            }
+
+        }
+        //for artifact in &self.available_artifacts {
+        //    match artifact.get_artifact(){
+        //        Ok(output) => println!("{}", output),
+        //        Err(e) => return Err(e)
+        //    }
+        //}
         Ok(())
     }
-    
-
-
 }

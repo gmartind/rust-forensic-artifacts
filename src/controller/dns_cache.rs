@@ -1,13 +1,16 @@
 use std::process::Command;
 
-use crate::controller::traits::Artifact;
-
 
 pub struct DnsCache{
-
 }
 
-impl Artifact for DnsCache{
+impl DnsCache{
+    pub fn new() -> Self {
+        Self { }
+    }
+}
+
+impl DnsCache{
     
     ///Execute powershell command and save
     fn get_artifact(&self) -> Result<String, String> {
@@ -17,4 +20,5 @@ impl Artifact for DnsCache{
         };
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
     }
+
 } 
