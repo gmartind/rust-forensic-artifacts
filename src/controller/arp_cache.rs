@@ -6,12 +6,6 @@ pub struct ArpCache{
 }
 
 impl ArpCache{
-    pub fn new() -> Self{
-        Self { }
-    }
-}
-
-impl ArpCache{
     fn get_artifact(&self) -> Result<String, String> {
         let output = match Command::new("powershell").current_dir("/").args(["Get-NetNeighbor"]).output(){
             Ok(output) => output,

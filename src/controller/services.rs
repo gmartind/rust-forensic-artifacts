@@ -1,6 +1,6 @@
 use forensic_rs::prelude::{RegistryReader, RegValue};
 
-const KEY_ROUTE: &str = "SYSTEM\\CurrentControlSet\\Services";
+const KEY_ROUTE: &str = r"SYSTEM\CurrentControlSet\Services";
 
 
 
@@ -12,9 +12,6 @@ pub struct ServiceReturn{
 impl ServiceReturn{
     pub fn new() -> Self{
         Self { services: Vec::new() }
-    }
-    pub fn insert(&mut self, service : Service) {
-        self.services.push(service);
     }
 
     pub fn get_services(&self) -> &Vec<Service> {

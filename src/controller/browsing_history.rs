@@ -2,9 +2,7 @@ use std::fs::{self};
 use sqlite::State;
 use forensic_rs::prelude::RegistryReader;
 
-use super::services::ServiceReturn;
-
-const PROFILE_LIST_ROUTE: &str = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList";
+const PROFILE_LIST_ROUTE: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
 const CHROME_HISTORY: &str = r"AppData\Local\Google\Chrome\User Data\Default\History";
 #[derive(PartialEq, Eq, Debug, Clone)]
 enum BrowsersBrands {
@@ -69,12 +67,6 @@ pub struct BrowsingHistoryArtifact {
 
 impl BrowsingHistoryArtifact{
 
-    pub fn new() -> Self{
-        Self { }
-    }
-
-
-
     pub fn acquire() -> Result<BrowsingHistoryReturn, String>{
         let mut ret = BrowsingHistoryReturn::new();
         let users: Vec<UserInfo> = get_users_sids();
@@ -130,8 +122,6 @@ fn chrome_history(image_path: &str) -> Result<Vec<HistoryEntry>, String>{
     let mut ret = Vec::new();
     while let Ok(State::Row) = statement.next(){
         ret.push(HistoryEntry::new(statement.read::<String, _>("date").unwrap(), statement.read::<String, _>("url").unwrap()));
-        //ret.push_str(&format!("{} : {}", statement.read::<String, _>("date").unwrap(), statement.read::<String, _>("url").unwrap()));
-        //ret.push('\n');
     }
     Ok(ret)
 }
