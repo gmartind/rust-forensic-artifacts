@@ -11,3 +11,14 @@ forensic-rs = "0.3.1"
 frnsc-liveregistry-rs = "0.1.2"
 sqlite = "0.30.4"
 chrono = "0.4.23"
+ws2_32-sys = "0.2.1"
+in_addr = "1.0.0"
+
+[dependencies.windows]
+version = "0.44.0"
+features = [
+    "Win32_NetworkManagement_IpHelper", 
+    "Win32_Foundation", 
+    "Win32_NetworkManagement_Ndis", 
+    "Win32_Networking_WinSock"
+]

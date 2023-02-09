@@ -16,17 +16,8 @@ pub struct Controller {
 
 impl Controller {
     pub fn new() -> Self {
-        //let artifacts: Vec<Box<dyn Artifact>> = Vec::new();
-        //let dns_cache = DnsCache::new();
-        //let arp_cache = ArpCache::new();
-        //let services = ServicesArtifact::new();
-        //let browsing_history = BrowsingHistory::new();
-        //artifacts.push(Box::new(dns_cache));
-        //artifacts.push(Box::new(arp_cache));
-        //artifacts.push(Box::new(services));
-        //artifacts.push(Box::new(browsing_history));
         Self {
-            //available_artifacts: artifacts
+
         }
     }
 
@@ -49,32 +40,29 @@ impl Controller {
     ///Iterate the implemented artifacts and acquire 
     fn get_artifacts(&self, version: &str) -> Result<(), String> {
         println!("{}", version);
-        let service_ret: ServiceReturn = match ServicesArtifact::acquire(){
-            Ok(r) => r,
-            Err(_) => return Err(String::from("No se pudieron extraer los servicios"))
-        };
-        for s in service_ret.get_services() {
-            println!("{}    {}", s.get_name(), s.get_path());
-        }
-        let browsing_history_ret = match BrowsingHistoryArtifact::acquire(){
-            Ok(r) => r,
-            Err(_) => return Err(String::from("No se pudieron extraer los historiales de navegación"))
-        };
+        //let service_ret: ServiceReturn = match ServicesArtifact::acquire(){
+        //    Ok(r) => r,
+        //    Err(_) => return Err(String::from("No se pudieron extraer los servicios"))
+        //};
+        //for s in service_ret.get_services() {
+        //    println!("{}    {}", s.get_name(), s.get_path());
+        //}
+        //let browsing_history_ret = match BrowsingHistoryArtifact::acquire(){
+        //    Ok(r) => r,
+        //    Err(_) => return Err(String::from("No se pudieron extraer los historiales de navegación"))
+        //};
 
-        for (user, history) in browsing_history_ret.get_user_history(){
-            println!("Historial de navegación para usuario {:?}:{:?}", user.sid, user.image_path);
-            println!("  Historial de Google Chrome:");
-            for entry in &history.chrome{
-                println!("  {}: {}", entry.time, entry.path);
-            }
-
-        }
-        //for artifact in &self.available_artifacts {
-        //    match artifact.get_artifact(){
-        //        Ok(output) => println!("{}", output),
-        //        Err(e) => return Err(e)
+        //for (user, history) in browsing_history_ret.get_user_history(){
+        //    println!("Historial de navegación para usuario {:?}:{:?}", user.sid, user.image_path);
+        //    println!("  Historial de Google Chrome:");
+        //    for entry in &history.chrome{
+        //        println!("  {}: {}", entry.time, entry.path);
         //    }
         //}
+
+
+        ArpCache::acquire();
+
         Ok(())
     }
 }

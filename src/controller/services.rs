@@ -25,12 +25,12 @@ pub struct Service{
 }
 
 impl Service{
-    pub fn get_name(&self) -> &String{
-        &self.name
+    pub fn get_name(&self) -> String{
+        self.name.clone()
     }
 
-    pub fn get_path(&self) -> &String{
-        &self.image_path
+    pub fn get_path(&self) -> String{
+        self.image_path.clone()
     }
 }
 
