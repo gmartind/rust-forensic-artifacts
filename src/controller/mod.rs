@@ -3,11 +3,14 @@ mod arp_cache;
 mod services;
 mod traits;
 mod browsing_history;
+mod network_drive;
 use std::env;
+use self::network_drive::NetworkDriveArtifact;
 use self::browsing_history::BrowsingHistoryArtifact;
 use self::{ dns_cache::DnsCache};
 use self::{ arp_cache::ArpCache};
 use self::{ services::ServicesArtifact, services::ServiceReturn};
+use crate::controller::network_drive::NetworkDriveReturn;
 use crate::controller::services::Service;
 
 pub struct Controller {
@@ -61,7 +64,19 @@ impl Controller {
         //}
 
 
-        ArpCache::acquire();
+        let ret = ArpCache::get_artifact().unwrap();
+        println!("{}", ret);
+
+        let ret = match NetworkDriveArtifact::acquire(){
+            Ok(r) => r,
+            Err(_) => NetworkDriveReturn::default()
+        };
+        println!("{:?}", ret);
+
+        let ret = ServicesArtifact::acquire().unwrap();
+        for service in ret.get_services() {
+            println!("{} {}", service.get_name(), service.get_path());
+        }
 
         Ok(())
     }

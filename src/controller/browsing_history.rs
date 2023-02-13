@@ -4,6 +4,7 @@ use forensic_rs::prelude::RegistryReader;
 
 const PROFILE_LIST_ROUTE: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
 const CHROME_HISTORY: &str = r"AppData\Local\Google\Chrome\User Data\Default\History";
+const BROWSERS_ROUTE: &str = r"Software\Clients\StartMenuInternet";
 #[derive(PartialEq, Eq, Debug, Clone)]
 enum BrowsersBrands {
     Chrome,
@@ -130,7 +131,7 @@ fn chrome_history(image_path: &str) -> Result<Vec<HistoryEntry>, String>{
 fn get_browsers() -> Option<Vec<BrowsersBrands>>{
     let mut registry = frnsc_liveregistry_rs::LiveRegistryReader{};
     let registry_key = registry.open_key(forensic_rs::prelude::RegHiveKey::
-        HkeyLocalMachine, "Software\\Clients\\StartMenuInternet");
+        HkeyLocalMachine, BROWSERS_ROUTE);
     let mut values = match registry.enumerate_keys(registry_key.unwrap()){
         Ok(v) => v,
         Err(_) => return None

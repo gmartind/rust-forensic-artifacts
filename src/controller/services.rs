@@ -4,7 +4,7 @@ const KEY_ROUTE: &str = r"SYSTEM\CurrentControlSet\Services";
 
 
 
-
+#[derive(Debug, Default)]
 pub struct ServiceReturn{
     services: Vec<Service>
 }
@@ -18,7 +18,7 @@ impl ServiceReturn{
         &self.services
     }
 }
-
+#[derive(Debug, Default)]
 pub struct Service{
     pub name: String,
     pub image_path: String
@@ -79,7 +79,7 @@ fn get_image_path(registry: &mut frnsc_liveregistry_rs::LiveRegistryReader, key:
         };
     let ret = String::from(match TryInto::<String>::try_into(image_path){
         Ok(s) => s,
-        Err(_) => return "".to_string()
+        Err(_) => return String::new()
     });
     ret
 }
