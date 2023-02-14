@@ -42,14 +42,14 @@ pub struct ServicesArtifact {
 impl ServicesArtifact{
 
     pub fn acquire() -> Result<ServiceReturn, String> {
-        let mut ret = ServiceReturn::new();
+
         let mut registry = frnsc_liveregistry_rs::LiveRegistryReader{};
         let registry_key = match registry.open_key(forensic_rs::prelude::RegHiveKey::HkeyLocalMachine, 
             KEY_ROUTE){
                 Ok(key) => key,
                 Err(_) => return Err("Unable to open registry.".to_string())
         };
-
+        let mut ret = ServiceReturn::new();
         let keys = match registry.enumerate_keys(registry_key){
             Ok(keys) => keys,
             Err(_) => Vec::new()

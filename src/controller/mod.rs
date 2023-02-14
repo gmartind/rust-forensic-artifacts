@@ -4,14 +4,16 @@ mod services;
 mod traits;
 mod browsing_history;
 mod network_drive;
+
 use std::env;
+use windows::Win32::Foundation::DNS_ERROR_DATABASE_BASE;
 use self::network_drive::NetworkDriveArtifact;
 use self::browsing_history::BrowsingHistoryArtifact;
-use self::{ dns_cache::DnsCache};
-use self::{ arp_cache::ArpCache};
-use self::{ services::ServicesArtifact, services::ServiceReturn};
+use self::dns_cache::DnsCache;
+use self::arp_cache::ArpCache;
+use self::services::ServicesArtifact;
 use crate::controller::network_drive::NetworkDriveReturn;
-use crate::controller::services::Service;
+
 
 pub struct Controller {
     //available_artifacts: Vec<Box<dyn Artifact>>
@@ -43,13 +45,13 @@ impl Controller {
     ///Iterate the implemented artifacts and acquire 
     fn get_artifacts(&self, version: &str) -> Result<(), String> {
         println!("{}", version);
-        //let service_ret: ServiceReturn = match ServicesArtifact::acquire(){
-        //    Ok(r) => r,
-        //    Err(_) => return Err(String::from("No se pudieron extraer los servicios"))
-        //};
-        //for s in service_ret.get_services() {
-        //    println!("{}    {}", s.get_name(), s.get_path());
-        //}
+        let service_ret = match ServicesArtifact::acquire(){
+            Ok(r) => r,
+            Err(_) => return Err(String::from("No se pudieron extraer los servicios"))
+        };
+        for s in service_ret.get_services() {
+            println!("{}    {}", s.get_name(), s.get_path());
+        }
         //let browsing_history_ret = match BrowsingHistoryArtifact::acquire(){
         //    Ok(r) => r,
         //    Err(_) => return Err(String::from("No se pudieron extraer los historiales de navegación"))
@@ -63,10 +65,13 @@ impl Controller {
         //    }
         //}
 
+        //let ret = DnsCache::get_artifact().unwrap();
+        //println!("{:?}", ret);
 
+    
         let ret = ArpCache::get_artifact().unwrap();
-        println!("{}", ret);
-
+        println!("{:?}", ret);
+        /*
         let ret = match NetworkDriveArtifact::acquire(){
             Ok(r) => r,
             Err(_) => NetworkDriveReturn::default()
@@ -76,8 +81,7 @@ impl Controller {
         let ret = ServicesArtifact::acquire().unwrap();
         for service in ret.get_services() {
             println!("{} {}", service.get_name(), service.get_path());
-        }
-
+        }*/
         Ok(())
     }
 }

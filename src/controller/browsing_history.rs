@@ -3,7 +3,7 @@ use sqlite::State;
 use forensic_rs::prelude::RegistryReader;
 
 const PROFILE_LIST_ROUTE: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList";
-const CHROME_HISTORY: &str = r"AppData\Local\Google\Chrome\User Data\Default\History";
+const CHROME_HISTORY: &str = r"\AppData\Local\Google\Chrome\User Data\Default\History";
 const BROWSERS_ROUTE: &str = r"Software\Clients\StartMenuInternet";
 #[derive(PartialEq, Eq, Debug, Clone)]
 enum BrowsersBrands {
@@ -42,11 +42,6 @@ pub struct History{
     pub opera: Vec<HistoryEntry>
 }
 
-impl History{
-    pub fn new() -> Self{
-        Self::default()
-    }
-}
 
 pub struct BrowsingHistoryReturn{
     users_history: Vec<(UserInfo, History)>
@@ -72,7 +67,7 @@ impl BrowsingHistoryArtifact{
         let mut ret = BrowsingHistoryReturn::new();
         let users: Vec<UserInfo> = get_users_sids();
         for user in users{
-            let mut history = History::new();
+            let mut history = History::default();
             history.chrome = chrome_history(&user.image_path).unwrap();
             ret.users_history.push((user,history));
         }
@@ -110,7 +105,6 @@ impl BrowsingHistoryArtifact{
 }
 fn chrome_history(image_path: &str) -> Result<Vec<HistoryEntry>, String>{
     let mut history_path = String::from(image_path);
-    history_path.push_str(r"\");
     history_path.push_str(CHROME_HISTORY);
     println!("{}",history_path);
     match fs::copy(history_path, "chrome_history.sqlite"){
